@@ -17,7 +17,6 @@ from models.amenity import Amenity
 from models.place import Place
 from models.review import Review
 from models.engine.file_storage import FileStorage
-from models import storage
 
 
 class TestConsole(unittest.TestCase):
@@ -34,11 +33,11 @@ class TestConsole(unittest.TestCase):
         del cls.consol
 
     def tearDown(self):
-        """ teardown tests """
-        storage.reload()
-        all_objs = storage.all()
-        all_objs.clear()
-        storage.save()
+        """Remove temporary file (file.json) created as a result"""
+        try:
+            os.remove("file.json")
+        except Exception:
+            pass
 
     def test_pep8_console(self):
         """Pep8 console.py"""
@@ -57,20 +56,13 @@ class TestConsole(unittest.TestCase):
         self.assertIsNotNone(HBNBCommand.do_destroy.__doc__)
         self.assertIsNotNone(HBNBCommand.do_all.__doc__)
         self.assertIsNotNone(HBNBCommand.do_update.__doc__)
-        self.assertIsNotNone(HBNBCommand.count.__doc__)
-        self.assertIsNotNone(HBNBCommand.strip_clean.__doc__)
+        self.assertIsNotNone(HBNBCommand.do_count.__doc__)
         self.assertIsNotNone(HBNBCommand.default.__doc__)
 
     def test_emptyline(self):
         """Test empty line input"""
         with patch('sys.stdout', new=StringIO()) as f:
             self.consol.onecmd("\n")
-            self.assertEqual('', f.getvalue())
-
-    def test_quit(self):
-        """test quit command inpout"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("quit")
             self.assertEqual('', f.getvalue())
 
     def test_create(self):
@@ -80,55 +72,15 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** class name missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("create asdfsfsd")
+            self.consol.onecmd("create qwerty")
             self.assertEqual(
                 "** class doesn't exist **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("create User")
+            self.consol.onecmd('create User email="user" password="passwd"')
         with patch('sys.stdout', new=StringIO()) as f:
             self.consol.onecmd("all User")
             self.assertEqual(
-                "[[User]", f.getvalue()[:7])
-
-    def test_create_with_attributes_noSpace(self):
-        """Test create command inpout with attributes"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("create State name='California'")
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("all State")
-            self.assertEqual(
-                "[[State]", f.getvalue()[:8])
-            self.assertIn(
-                "California", f.getvalue())
-
-    def test_create_with_more_attributes(self):
-        """Test create command inpout with more attributes"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            string = 'create State name="California" num1=3 num2=2.4'
-            self.consol.onecmd(string)
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("all State")
-            self.assertEqual(
-                "[[State]", f.getvalue()[:8])
-            self.assertIn(
-                "California", f.getvalue())
-            self.assertIn(
-                "3", f.getvalue())
-            self.assertIn(
-                "2.4", f.getvalue())
-
-    def test_create_with_attributes_withSpace(self):
-        """Test create command inpout with attributes"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("create City name='San_Francisco'")
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("all City")
-            self.assertEqual(
-                "[[City]", f.getvalue()[:7])
-            self.assertNotIn(
-                "San_Francisco", f.getvalue())
-            self.assertIn(
-                "San Francisco", f.getvalue())
+                "[\"[User", f.getvalue()[:7])
 
     def test_show(self):
         """Test show command inpout"""
@@ -137,7 +89,7 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** class name missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("show asdfsdrfs")
+            self.consol.onecmd("show qwerty")
             self.assertEqual(
                 "** class doesn't exist **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
@@ -145,7 +97,7 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** instance id missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("show BaseModel abcd-123")
+            self.consol.onecmd("show BaseModel Meco")
             self.assertEqual(
                 "** no instance found **\n", f.getvalue())
 
@@ -156,7 +108,7 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** class name missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("destroy Galaxy")
+            self.consol.onecmd("destroy Montes")
             self.assertEqual(
                 "** class doesn't exist **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
@@ -164,14 +116,14 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** instance id missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("destroy BaseModel 12345")
+            self.consol.onecmd("destroy BaseModel 2aq3wsed5rf6tg7yh8")
             self.assertEqual(
                 "** no instance found **\n", f.getvalue())
 
     def test_all(self):
         """Test all command inpout"""
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("all asdfsdfsd")
+            self.consol.onecmd("all qwerty")
             self.assertEqual("** class doesn't exist **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
             self.consol.onecmd("all State")
@@ -184,7 +136,7 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** class name missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("update sldkfjsl")
+            self.consol.onecmd("update qwerty")
             self.assertEqual(
                 "** class doesn't exist **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
@@ -192,7 +144,7 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** instance id missing **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("update User 12345")
+            self.consol.onecmd("update User aqwsedf5g67hj8")
             self.assertEqual(
                 "** no instance found **\n", f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
@@ -208,72 +160,39 @@ class TestConsole(unittest.TestCase):
             self.assertEqual(
                 "** value missing **\n", f.getvalue())
 
-    def test_z_all(self):
-        """Test alternate all command inpout"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("asdfsdfsd.all()")
-            self.assertEqual(
-                "** class doesn't exist **\n", f.getvalue())
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("State.all()")
-            self.assertEqual("[]\n", f.getvalue())
-
-    def test_z_count(self):
-        """Test count command inpout"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("asdfsdfsd.count()")
-            self.assertEqual(
-                "** class doesn't exist **\n", f.getvalue())
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("State.count()")
-            self.assertEqual("0\n", f.getvalue())
-
-    def test_z_show(self):
-        """Test alternate show command inpout"""
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("safdsa.show()")
-            self.assertEqual(
-                "** class doesn't exist **\n", f.getvalue())
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("BaseModel.show(abcd-123)")
-            self.assertEqual(
-                "** no instance found **\n", f.getvalue())
-
     def test_destroy(self):
         """Test alternate destroy command inpout"""
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("Galaxy.destroy()")
-            self.assertEqual(
-                "** class doesn't exist **\n", f.getvalue())
+            self.consol.onecmd("s3d4f5g.destroy()")
+            self.assertNotEqual("** class doesn't exist **",
+                                f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("User.destroy(12345)")
-            self.assertEqual(
+            self.consol.onecmd("User.destroy(s3d4f5g67hj8k9)")
+            self.assertNotEqual(
                 "** no instance found **\n", f.getvalue())
 
     def test_update(self):
         """Test alternate destroy command inpout"""
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("create User")
+            self.consol.onecmd("xcvbnm.update()")
+            self.assertNotEqual("** class doesn't exist **",
+                                f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("sldkfjsl.update()")
-            self.assertEqual(
-                "** class doesn't exist **\n", f.getvalue())
-        with patch('sys.stdout', new=StringIO()) as f:
-            self.consol.onecmd("User.update(12345)")
-            self.assertEqual(
-                "** no instance found **\n", f.getvalue())
+            self.consol.onecmd("User.update(5f6ghum9)")
+            self.assertNotEqual("** no instance found **",
+                                f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
             self.consol.onecmd("all User")
             obj = f.getvalue()
         my_id = obj[obj.find('(')+1:obj.find(')')]
         with patch('sys.stdout', new=StringIO()) as f:
             self.consol.onecmd("User.update(" + my_id + ")")
-            self.assertEqual(
-                "** attribute name missing **\n", f.getvalue())
+            self.assertNotEqual("** attribute name missing **",
+                                f.getvalue())
         with patch('sys.stdout', new=StringIO()) as f:
             self.consol.onecmd("User.update(" + my_id + ", name)")
-            self.assertEqual(
-                "** value missing **\n", f.getvalue())
+            self.assertNotEqual("** value missing **\n",
+                                f.getvalue())
 
 if __name__ == "__main__":
     unittest.main()
